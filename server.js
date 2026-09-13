@@ -82,7 +82,13 @@ app.get("/api/settings", (_req, res) => {
 app.use("/api", (_req, res) => res.status(404).json({ error: "API route not found." }));
 app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-const port = Number(process.env.PORT || 3000);
-app.listen(port, "0.0.0.0", () => {
-  console.log(`AHM Studio V8 running on http://localhost:${port}`);
-});
+// Export the Express app for Vercel serverless functions.
+// Only start a local HTTP server when this file is run directly.
+if (require.main === module) {
+  const port = Number(process.env.PORT || 3000);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`AHM Studio V8 running on http://localhost:${port}`);
+  });
+}
+
+module.exports = app;

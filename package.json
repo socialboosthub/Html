@@ -1,8 +1,8 @@
 {
   "name": "ahm-studio-v8",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "private": true,
-  "description": "AHM Studio V8 - automated short-form stylized 3D storytelling pipeline",
+  "description": "AHM Studio V8 - Vercel-compatible web/API foundation",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

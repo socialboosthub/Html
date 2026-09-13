@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>AHM Studio V8</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <div class="eyebrow">AI STORY VIDEO FACTORY</div>
+        <h1>AHM <span>STUDIO</span> V8</h1>
+        <p>Fast-paced stylized 3D cinematic stories — automatically.</p>
+      </div>
+      <div id="status" class="pill">READY</div>
+    </header>
+
+    <section class="hero card">
+      <h2>Make one complete short.</h2>
+      <p class="muted">The AI chooses the natural runtime: roughly 30 seconds to 2 minutes. No forced filler. No parts.</p>
+      <textarea id="idea" placeholder="Example: A fisherman discovers that the fish he caught can predict tomorrow..."></textarea>
+
+      <div class="row">
+        <label>Duration
+          <select id="duration">
+            <option value="auto">AI decides naturally</option>
+            <option value="30">Around 30 sec</option>
+            <option value="45">Around 45 sec</option>
+            <option value="60">Around 1 min</option>
+            <option value="90">Around 1.5 min</option>
+            <option value="120">Up to 2 min</option>
+          </select>
+        </label>
+        <button id="create">🚀 CREATE VIDEO</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h3>Production lock</h3>
+        <ul>
+          <li>📱 9:16 vertical</li>
+          <li>🎭 Consistent 3D characters</li>
+          <li>🎥 Fast cinematic cuts</li>
+          <li>🟢 Reveal annotations</li>
+          <li>🔴 Impact/physics annotations</li>
+          <li>🎙️ Your voice</li>
+          <li>📝 Large subtitles</li>
+          <li>🔊 Music + SFX</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Automation</h3>
+        <div id="connections">Checking connections…</div>
+      </div>
+    </section>
+
+    <section id="jobCard" class="card hidden">
+      <div class="jobtop">
+        <div>
+          <div class="eyebrow">CURRENT RUN</div>
+          <h2 id="stage">Starting…</h2>
+        </div>
+        <strong id="percent">0%</strong>
+      </div>
+      <div class="bar"><i id="bar"></i></div>
+      <pre id="logs"></pre>
+      <div id="result"></div>
+      <div id="reviewActions" class="actions hidden">
+        <button id="downloadBtn">⬇️ DOWNLOAD VIDEO</button>
+        <button id="postBtn">🚀 POST AUTOMATICALLY</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="jobtop">
+        <div>
+          <div class="eyebrow">SAVED VIDEOS</div>
+          <h2>History</h2>
+        </div>
+        <button id="refreshHistory">↻ REFRESH</button>
+      </div>
+      <div id="history" class="history">Loading history…</div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

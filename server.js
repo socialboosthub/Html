@@ -1,27 +1,72 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
-const { createJob, getJob, runPipeline } = require("./lib/orchestrator");
+const {
+  createJob,
+  getJob,
+  runPipeline,
+  runPublishing,
+  getScriptBank,
+  addScriptBankItems,
+  deleteScriptBankItem
+} = require("./lib/orchestrator");
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, app: "AHM Studio V8", version: "8.0.0" });
+  res.json({ ok: true, app: "AHM Studio V8", version: "8.1.0", feature: "script-bank" });
+});
+
+app.get("/api/script-bank", async (_req, res) => {
+  try {
+    res.json(await getScriptBank());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/script-bank", async (req, res) => {
+  try {
+    const raw = Array.isArray(req.body?.items) ? req.body.items : [];
+    const items = raw.map(x => String(x).trim()).filter(Boolean);
+    if (!items.length) return res.status(400).json({ error: "No story ideas were supplied." });
+    if (items.length > 500) return res.status(400).json({ error: "Maximum 500 ideas per batch." });
+
+    const result = await addScriptBankItems(items);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/script-bank/:id", async (req, res) => {
+  try {
+    res.json(await deleteScriptBankItem(req.params.id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/api/jobs", async (req, res) => {
   try {
-    const { idea, targetDuration } = req.body || {};
-    if (!idea || !String(idea).trim()) {
-      return res.status(400).json({ error: "Please enter a story idea." });
+    const { idea, targetDuration, source = "bank" } = req.body || {};
+
+    if (!["bank", "ai", "manual"].includes(source)) {
+      return res.status(400).json({ error: "Invalid story source." });
     }
-    const job = createJob({
-      idea: String(idea).trim(),
+
+    if (source === "manual" && !idea?.trim()) {
+      return res.status(400).json({ error: "Please enter your story idea." });
+    }
+
+    const job = await createJob({
+      idea: source === "manual" ? String(idea).trim() : "",
+      source,
       targetDuration: targetDuration || "auto"
     });
-    // Start in the background so the browser gets a job id immediately.
+
     runPipeline(job.id).catch(err => console.error("Pipeline error:", err));
     res.json(job);
   } catch (err) {
@@ -36,31 +81,27 @@ app.get("/api/jobs/:id", (req, res) => {
 });
 
 app.get("/api/history", (_req, res) => {
-  const fs = require("fs");
-  const dir = path.join(__dirname, "data");
-  if (!fs.existsSync(dir)) return res.json([]);
-  const items = fs.readdirSync(dir)
-    .filter(f => f.endsWith(".json"))
-    .map(f => { try { return JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch { return null; } })
-    .filter(Boolean)
-    .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  res.json(items);
+  // V8 history is currently in memory on Vercel.
+  // Persistent video/history storage will be connected through external storage.
+  res.json(require("./lib/orchestrator").getHistory());
 });
 
 app.get("/api/jobs/:id/download", (req, res) => {
   const job = getJob(req.params.id);
-  if (!job || !job.video?.localFinalFile || !require("fs").existsSync(job.video.localFinalFile)) {
-    return res.status(404).json({ error: "Final video file is not available." });
+  const fs = require("fs");
+  if (!job || !job.video?.localFinalFile || !fs.existsSync(job.video.localFinalFile)) {
+    return res.status(404).json({ error: "Final video file is not available yet." });
   }
   res.download(job.video.localFinalFile, "ahm-studio-video.mp4");
 });
 
 app.post("/api/jobs/:id/publish", async (req, res) => {
-  const { runPublishing } = require("./lib/orchestrator");
-  const job = getJob(req.params.id);
-  if (!job) return res.status(404).json({ error: "Job not found." });
-  if (job.status !== "completed") return res.status(400).json({ error: "Generate and review the video first." });
   try {
+    const job = getJob(req.params.id);
+    if (!job) return res.status(404).json({ error: "Job not found." });
+    if (job.status !== "completed") {
+      return res.status(400).json({ error: "Generate and review the video first." });
+    }
     await runPublishing(job.id);
     res.json(getJob(job.id));
   } catch (err) {
@@ -75,15 +116,14 @@ app.get("/api/settings", (_req, res) => {
     hasRunPod: !!process.env.RUNPOD_ENDPOINT_ID,
     hasVoice: !!process.env.ELEVENLABS_VOICE_ID,
     hasTikTok: !!process.env.TIKTOK_ACCESS_TOKEN,
-    hasYouTube: !!process.env.YOUTUBE_REFRESH_TOKEN
+    hasYouTube: !!process.env.YOUTUBE_REFRESH_TOKEN,
+    hasSupabase: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
   });
 });
 
 app.use("/api", (_req, res) => res.status(404).json({ error: "API route not found." }));
 app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-// Export the Express app for Vercel serverless functions.
-// Only start a local HTTP server when this file is run directly.
 if (require.main === module) {
   const port = Number(process.env.PORT || 3000);
   app.listen(port, "0.0.0.0", () => {

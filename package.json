@@ -1,12 +1,11 @@
 {
-  "name": "ahm-studio-v8",
-  "version": "8.0.1",
+  "name": "ahm-studio-free-editor",
+  "version": "8.1.0",
   "private": true,
-  "description": "AHM Studio V8 - Vercel-compatible web/API foundation",
+  "description": "AHM Studio browser-based cinematic story editor",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
